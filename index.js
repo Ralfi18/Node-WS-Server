@@ -5,9 +5,33 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const options = { cors: { origin: "*" } };
 const io = new Server(server, options);
+var cors = require('cors');
+
+
+app.use(cors({
+	origin: [
+		"http://localhost:3001", 
+		"http://localhost:3000"
+	] 	
+}));
 
 app.get("/", (req, res) => {
 	res.send("<h1>TEST SERVER</h1>");
+});
+
+app.get("/get-user", (req, res) => {
+	console.log( req.query )
+	let user = null;
+	if(req.query.username && req.query.password) {
+		if(req.query.username = "rali" && req.query.password == "123") {
+			user = {
+				id: "1",
+				name: "Rali Dimitrov",
+				email: "rali@mail.com"
+			}
+		}
+	} 
+	res.json(user);
 });
 
 io.on("connection", (socket) => {
