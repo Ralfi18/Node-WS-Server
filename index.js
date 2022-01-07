@@ -20,14 +20,16 @@ app.get("/", (req, res) => {
 });
 
 app.get("/get-user", (req, res) => {
-	console.log( req.query )
 	let user = null;
 	if(req.query.username && req.query.password) {
 		if(req.query.username = "rali" && req.query.password == "123") {
 			user = {
-				id: "1",
-				name: "Rali Dimitrov",
-				email: "rali@mail.com"
+				loggedIn: true,
+				data: {
+					id: "1",
+					name: "Rali Dimitrov",
+					email: "rali@mail.com"
+				}
 			}
 		}
 	} 
@@ -39,6 +41,11 @@ io.on("connection", (socket) => {
   	socket.on("disconnect", (reason) => {
   		console.log(reason)
   	});	
+
+  	socket.on("message", function(msg) {
+	    // socket.emit(msg); // Send message to sender
+	    socket.broadcast.emit("message", msg); // Send message to everyone BUT sender
+  	});
 });
 
 
