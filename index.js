@@ -5,8 +5,8 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const options = { cors: { origin: "*" } };
 const io = new Server(server, options);
-var cors = require('cors');
-
+const cors = require("cors");
+const mysql = require("mysql");
 
 app.use(cors({
 	origin: [
@@ -22,6 +22,23 @@ app.get("/", (req, res) => {
 app.get("/get-user", (req, res) => {
 	let user = null;
 	if(req.query.username && req.query.password) {
+		const con = mysql.createConnection({
+			host: "localhost",
+			user: "root",
+			password: "cr00n",
+		  	database: "mydb"	
+		});
+		con.connect(function(err) {
+			if (err) {
+				console.error('error connecting: ' + err.stack);
+				return;
+			}	
+			console.log("Connected!");
+			con.query("SELECT * FROM users", function (err, result, fields) {
+				if (err) throw err;
+				console.log(result);
+			});
+		});
 		if(req.query.username == "rali" && req.query.password == "123") {
 			user = {
 				loggedIn: true,
