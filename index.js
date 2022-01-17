@@ -7,6 +7,11 @@ const options = { cors: { origin: "*" } };
 const io = new Server(server, options);
 const cors = require("cors");
 const mysql = require("mysql");
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
+const jwt = require('jsonwebtoken');
+const secret = "someHash";
+// const yourPassword = "someRandomPasswordHere";
 
 app.use(cors({
 	origin: [
@@ -19,6 +24,21 @@ app.get("/", (req, res) => {
 	res.send("<h1>TEST SERVER</h1>");
 });
 
+app.get("/create-pass", (req, res) => {
+	return false;
+	const yourPassword  = req.query.password;
+
+	if(yourPassword) {
+		bcrypt.genSalt(saltRounds, (err, salt) => {
+		    bcrypt.hash(yourPassword, salt, (err, hash) => {
+		        // Now we can store the password hash in db.
+		        res.send("<p>password: "+hash+"</p>");
+		    });
+		});
+	}
+});
+
+
 app.get("/get-user", (req, res) => {
 	let user = null;
 	if(req.query.username && req.query.password) {
@@ -26,41 +46,52 @@ app.get("/get-user", (req, res) => {
 			host: "localhost",
 			user: "root",
 			password: "cr00n",
-		  	database: "mydb"	
+		  	database: "react-sockets"	
 		});
 		con.connect(function(err) {
 			if (err) {
-				console.error('error connecting: ' + err.stack);
-				return;
+				// console.error('error connecting: ' + err.stack);
+				return null;
 			}	
-			console.log("Connected!");
-			con.query("SELECT * FROM users", function (err, result, fields) {
+			// console.log("Connected!");
+			con.query("SELECT * FROM users WHERE email = ?", [req.query.username.trim()], function (err, result, fields) {
 				if (err) throw err;
-				console.log(result);
+				// console.log(result.length)
+				if(result && result.length) {
+					
+					// console.log(result)
+					bcrypt.compare(req.query.password, result[0].password, function(err, response) {
+						// console.log(response)
+			  			if(response == true) {
+			  				const token = jwt.sign({
+							  exp: Math.floor(Date.now() / 1000) + (60 * 60),
+							  data: 'foobar'
+							}, secret);
+							con.query("UPDATE users SET token = ? WHERE id= ? LIMIT 1", [token, result[0].id], function (err, result, fields) {
+								console.log(err, result)
+							})	
+			  				user = {
+								loggedIn: true,
+								data: {
+									id: result[0].id,
+									name: result[0].first_name + " " + result[0].last_name,
+									email: result[0].email,
+									token
+								}
+							}
+							console.log( user )
+							res.json(user);
+			  			} else {
+			  				res.json(user);
+			  			}
+					})
+				} else {
+					res.json(user);
+				}
 			});
 		});
-		if(req.query.username == "rali" && req.query.password == "123") {
-			user = {
-				loggedIn: true,
-				data: {
-					id: "1",
-					name: "Rali Dimitrov",
-					email: "rali@mail.com"
-				}
-			}
-		}
-		if(req.query.username == "magi" && req.query.password == "123") {
-			user = {
-				loggedIn: true,
-				data: {
-					id: "1",
-					name: "Magi Dimitrova",
-					email: "magi@mail.com"
-				}
-			}
-		}
 	} 
-	res.json(user);
+	// res.json(user);
 });
 
 io.on("connection", (socket) => {
@@ -69,10 +100,17 @@ io.on("connection", (socket) => {
   		console.log(reason)
   	});	
 
-  	socket.on("message", function(msg) {
-  		console.log(socket.id + ": " + msg);
+  	socket.on("message", function(data) {
+  		console.log("data: ", data)
+  		// verify a token symmetric - synchronous
+		var decoded = jwt.verify(data.token, secret);
+
+		console.log(decoded) // bar
+
+  		console.log(socket.id + ": " + data.msg);
+
 	    //io.emit("message", msg); // Send message to sender
-	    socket.broadcast.emit("message", msg); // Send message to everyone BUT sender
+	    socket.broadcast.emit("message", data.msg); // Send message to everyone BUT sender
   	});
 });
 
