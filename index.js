@@ -17,16 +17,9 @@ const dotenv = require('dotenv');
 dotenv.config();
 // access config var
 const secret = process.env.TOKEN_SECRET;
-
 const auth = require('./inc/auth');
-
-
-app.use(cors({
-	origin: [
-		"http://localhost:3001", 
-		"http://localhost:3000"
-	] 	
-}));
+const origin = ["http://localhost:3001", "http://localhost:3000"]
+app.use(cors({ origin }));
 
 app.get("/", (req, res) => {
 	res.send("<h1>TEST SERVER</h1>"+  require('crypto').randomBytes(64).toString('hex') );

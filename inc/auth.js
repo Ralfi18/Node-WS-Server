@@ -108,3 +108,11 @@ exports.getUser = async function(req, res) {
 		return null;
 	}
 }
+
+exports.register = async function() {
+
+}
+
+exports.generatePassword = async function() {
+
+}
