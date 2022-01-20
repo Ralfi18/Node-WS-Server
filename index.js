@@ -18,6 +18,8 @@ dotenv.config();
 // access config var
 const secret = process.env.TOKEN_SECRET;
 
+const auth = require('./inc/auth');
+
 
 app.use(cors({
 	origin: [
@@ -46,63 +48,10 @@ app.get("/create-pass", (req, res) => {
 
 
 app.get("/get-user", (req, res) => {
-	// console.log( secret )
-	let user = null;
-	if(req.query.username && req.query.password) {
-		const con = mysql.createConnection({
-			host: "localhost",
-			user: "root",
-			password: "cr00n",
-		  	database: "react-sockets"	
-		});
-		con.connect(function(err) {
-			if (err) {
-				// console.error('error connecting: ' + err.stack);
-				return null;
-			}	
-			// console.log("Connected!");
-			con.query("SELECT * FROM users WHERE email = ?", [req.query.username.trim()], function (err, result, fields) {
-				if (err) throw err;
-				// console.log(result.length)
-				if(result && result.length) {
-					
-					// console.log(result)
-					bcrypt.compare(req.query.password, result[0].password, function(err, response) {
-						// console.log(response)
-			  			if(response == true) {
-			  				const token = jwt.sign({
-							  exp: Math.floor(Date.now() / 1000) + (60 * 60),
-							  data: { 
-							  	userId: result[0].id, 
-							  	userEmail: result[0].email,
-							  	name: result[0].first_name + " " + result[0].last_name
-							  }
-							}, secret);
-							con.query("UPDATE users SET token = ? WHERE id= ? LIMIT 1", [token, result[0].id], function (err, result, fields) {
-								// console.log(err, result)
-							})	
-			  				user = {
-								loggedIn: true,
-								data: {
-									id: result[0].id,
-									name: result[0].first_name + " " + result[0].last_name,
-									email: result[0].email,
-									token
-								}
-							}
-							// console.log( user )
-							res.json(user);
-			  			} else {
-			  				res.json(user);
-			  			}
-					})
-				} else {
-					res.json(user);
-				}
-			});
-		});
-	} 
-	// res.json(user);
+	const authUser = auth.getUser(req, res);
+	authUser.then(function(result) {
+		res.json(result);
+	})
 });
 
 io.on("connection", (socket) => {
@@ -130,13 +79,12 @@ io.on("connection", (socket) => {
   	})
 
   	socket.on("logout", function(socketID) {
-  		console.log( "Logout: ", Object.keys(io.sockets._ids));
+  		// console.log( "Logout: ", Object.keys(io.sockets._ids));
   // 		Object.values(io.of("/").connected).forEach(function(s) {
   // 			console.log(s.id)
 		//     // s.disconnect(true);
 		// });
   		if(socketID) {
-
 			io.in(socketID).disconnectSockets();	
   		}
 		
