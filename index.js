@@ -61,26 +61,26 @@ io.on("connection", (socket) => {
   		try {
 		  	const decoded = jwt.verify(data.token, secret);
 		  	console.log( decoded )
+		  	const timeDiff = decoded.exp - Math.floor(Date.now() / 1000);
+		  	console.log("timeDiff: ", timeDiff)
+		  	setTimeout(function(){
+		  		io.to(socket.id).emit('logout', 'hey')
+		  	}, (timeDiff*1000));
 		    //io.emit("message", msg); // Send message to sender
 	    	socket.broadcast.emit("login", "User " + decoded.data.name + " loged in!"); // Send message to everyone BUT sender
 	    	io.to(socket.id).emit('hey', 'hey')
 		} catch(err) {
 			// err
 			// console.log( err )
+			io.to(socket.id).emit('logout', 'hey')
 			io.in(socket.id).disconnectSockets();		
 		}
   	})
 
   	socket.on("logout", function(socketID) {
-  		// console.log( "Logout: ", Object.keys(io.sockets._ids));
-  // 		Object.values(io.of("/").connected).forEach(function(s) {
-  // 			console.log(s.id)
-		//     // s.disconnect(true);
-		// });
   		if(socketID) {
 			io.in(socketID).disconnectSockets();	
   		}
-		
   	})
 
   	socket.on("message", function(data) {
