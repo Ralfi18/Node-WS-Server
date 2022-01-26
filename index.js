@@ -69,7 +69,7 @@ io.on("connection", (socket) => {
 		  		io.to(socket.id).emit('logout', 'hey')
 		  	}, (timeDiff * 1000));
 		    //io.emit("message", msg); // Send message to sender
-	    	socket.broadcast.emit("login", "User " + decoded.data.name + " loged in!"); // Send message to everyone BUT sender
+	    	socket.broadcast.emit("login", "User " + decoded.data.name + " logged in!"); // Send message to everyone BUT sender
 	    	io.to(socket.id).emit('hey', 'hey')
 		} catch(err) {
 			// err
@@ -79,7 +79,7 @@ io.on("connection", (socket) => {
 		}
   	})
 
-  	socket.on("udapteProduct", function(data){
+  	socket.on("updateProduct", function(data){
   		try {
 		  	const decoded = jwt.verify(data.token, secret);
 		  	// console.log(data)
