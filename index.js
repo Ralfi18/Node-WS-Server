@@ -18,6 +18,8 @@ dotenv.config();
 // access config var
 const secret = process.env.TOKEN_SECRET;
 const auth = require('./inc/auth');
+const db = require('./inc/db');
+
 const origin = ["http://localhost:3001", "http://localhost:3000"]
 app.use(cors({ origin }));
 
@@ -65,7 +67,7 @@ io.on("connection", (socket) => {
 		  	console.log("timeDiff: ", timeDiff)
 		  	setTimeout(function(){
 		  		io.to(socket.id).emit('logout', 'hey')
-		  	}, (timeDiff*1000));
+		  	}, (timeDiff * 1000));
 		    //io.emit("message", msg); // Send message to sender
 	    	socket.broadcast.emit("login", "User " + decoded.data.name + " loged in!"); // Send message to everyone BUT sender
 	    	io.to(socket.id).emit('hey', 'hey')
@@ -76,6 +78,38 @@ io.on("connection", (socket) => {
 			io.in(socket.id).disconnectSockets();		
 		}
   	})
+
+  	socket.on("udapteProduct", function(data){
+  		try {
+		  	const decoded = jwt.verify(data.token, secret);
+		  	// console.log(data)
+		  	db.updateProduct(data.product).then(function(result){
+		  		if(result && result.length) {
+		  			console.log(result)
+					io.emit('updateProduct', JSON.stringify(result));
+					socket.broadcast.emit("message", `Product ${result[0].name} has been updated`);
+		  		}
+		  	});
+		  	
+		} catch(err) {
+			// err
+			io.in(socket.id).disconnectSockets();		
+		}
+  	});
+
+  	socket.on("loadProducts", function(data){
+  		try {
+		  	const decoded = jwt.verify(data.token, secret);
+		  	db.getProducts().then(function(result){
+				io.to(socket.id).emit('loadProducts', JSON.stringify(result));
+		  	});
+		  	
+		} catch(err) {
+			// err
+			// console.log( err )
+			io.in(socket.id).disconnectSockets();		
+		}
+  	});
 
   	socket.on("logout", function(socketID) {
   		if(socketID) {

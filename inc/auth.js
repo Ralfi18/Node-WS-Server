@@ -63,7 +63,7 @@ const checkPassCrypt = function(con, req, result) {
 				bcrypt.compare(req.query.password, result[0].password, function(err, response) {
 		  			if(response == true) {
 		  				const token = jwt.sign({
-						  exp: Math.floor(Date.now() / 1000) + (60 * 15), // hour is (60 * 60) 
+						  exp: Math.floor(Date.now() / 1000) + (60 * 15), // expires after 15 minutes [ hour is (60 * 60) ]
 						  data: { 
 						  	userId: result[0].id, 
 						  	userEmail: result[0].email,
